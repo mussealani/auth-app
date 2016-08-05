@@ -1,14 +1,24 @@
 var mongoose = require('mongoose');
 var User = mongoose.model('User');
+var bcrypt = require('bcryptjs');
 
 var sendJsonResponse = function(res, status, content) {
     res.status(status);
     res.json(content);
 }
 
-module.exports.getRegisterForm = function(req, res) {
-    res.render('register');
-};
+// hash password
+var pass = (function () {
+    var hashedPass = function (password) {
+        var salt = bcrypt.genSaltSync(10);
+        var hash = bcrypt.hashSync(password, salt);
+        password = hash;
+        return password;
+    }
+    return {
+        hashedPass: hashedPass
+    }
+})();
 
 module.exports.createUser = function(req, res) {
     var name = req.body.name;
@@ -34,16 +44,16 @@ module.exports.createUser = function(req, res) {
             name: name,
             email: email,
             username: username,
-            password: password
+            password: pass.hashedPass(password)
         }, function(err, user) {
             if (err) {
                 console.log(err);
-                sendJsonResponse(res, 404, err);
+                // sendJsonResponse(res, 404, err);
             } else {
                 console.log(user);
             }
         });
         req.flash('success_msg', 'You are registered and can now login!');
-        res.redirect('/users/login');
+        res.redirect('/login');
     }
 }
